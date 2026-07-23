@@ -5,4 +5,12 @@ services:
     plan: starter
     autoDeploy: true
     healthCheckPath: /health
+    disk:
+      name: sqlite-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////app/data/chatbot_saas.db
+
 
