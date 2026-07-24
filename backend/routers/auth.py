@@ -9,6 +9,7 @@ import hashlib
 from typing import Any, Dict, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -181,6 +182,7 @@ def admin_login(payload: LoginRegisterPayload, db: Session = Depends(get_db)) ->
 @router.get("/api/auth/me")
 def get_current_user_info(user: User = Depends(get_request_user), db: Session = Depends(get_db)) -> Dict[str, Any]:
     business = db.query(Business).filter(Business.owner_id == user.id).first()
+    has_calendar = bool(user.calendar_token)
     return {
         "ok": True,
         "user": {
@@ -188,12 +190,120 @@ def get_current_user_info(user: User = Depends(get_request_user), db: Session = 
             "email": user.email,
             "is_admin": user.is_admin,
             "business_name": user.business_name,
+            "has_calendar_connected": has_calendar,
+            "calendar_id": user.calendar_id,
         },
         "business": {
             "id": business.id,
             "name": business.name,
             "business_name": business.business_name,
-            "plan": business.plan,
-            "subscription_status": business.subscription_status,
+            "business_description": business.business_description or "",
+            "services_products": business.services_products or "",
+            "faqs": business.faqs or "",
+            "policies": business.policies or "",
+            "tone_style": business.tone_style or "friendly and professional",
+            "personality_prompt": business.personality_prompt or "",
+            "lead_capture_enabled": business.lead_capture_enabled,
+            "plan": business.plan or "starter",
+            "subscription_status": business.subscription_status or "trial",
+            "has_calendar_connected": has_calendar,
+            "calendar_id": user.calendar_id or "primary",
         } if business else None,
     }
+
+
+@router.get("/auth/google-calendar/authorize")
+@router.get("/api/client/calendar/authorize")
+def google_calendar_authorize(
+    user: User = Depends(get_request_user),
+) -> Dict[str, Any]:
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google-calendar/callback")
+
+    if client_id:
+        scope = "https://www.googleapis.com/auth/calendar"
+        auth_url = (
+            f"https://accounts.google.com/o/oauth2/v2/auth?"
+            f"client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+            f"&scope={scope}&access_type=offline&prompt=consent&state={user.id}"
+        )
+    else:
+        # Development / Mock Mode
+        auth_url = f"{redirect_uri}?code=mock-authorization-code&state={user.id}"
+
+    return {"ok": True, "authorization_url": auth_url}
+
+
+@router.get("/auth/google-calendar/callback")
+def google_calendar_callback(
+    code: str,
+    state: str | None = None,
+    db: Session = Depends(get_db)
+):
+    user_id = None
+    if state:
+        try:
+            user_id = int(state)
+        except ValueError:
+            pass
+
+    user = None
+    if user_id:
+        user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        user = db.query(User).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No user found to associate calendar with")
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google-calendar/callback")
+
+    if code == "mock-authorization-code" or not client_id or not client_secret:
+        mock_token = json.dumps({
+            "token": "mock-access-token",
+            "refresh_token": "mock-refresh-token",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": "mock-client-id",
+            "client_secret": "mock-client-secret",
+            "scopes": ["https://www.googleapis.com/auth/calendar"]
+        })
+        user.calendar_token = mock_token
+        user.calendar_id = "primary"
+        db.commit()
+        return RedirectResponse(url="/#client-dashboard?calendar_connected=true")
+
+    try:
+        import httpx
+        token_url = "https://oauth2.googleapis.com/token"
+        response = httpx.post(
+            token_url,
+            data={
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            },
+        )
+        token_data = response.json()
+        if "access_token" in token_data:
+            stored_token = json.dumps({
+                "token": token_data["access_token"],
+                "refresh_token": token_data.get("refresh_token"),
+                "token_uri": token_url,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "scopes": ["https://www.googleapis.com/auth/calendar"]
+            })
+            user.calendar_token = stored_token
+            user.calendar_id = "primary"
+            db.commit()
+            return RedirectResponse(url="/#client-dashboard?calendar_connected=true")
+        else:
+            raise ValueError(token_data.get("error_description", "Token exchange failed"))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Google Calendar OAuth failed: {str(exc)}")
+

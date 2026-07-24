@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import dateutil.parser
 from typing import Any, Dict
 
@@ -30,7 +30,7 @@ def parse_booking_datetime(date_str: str, time_str: str) -> datetime:
             return datetime(d.year, d.month, d.day, t.hour, t.minute, t.second)
         except Exception as e:
             logger.warning(f"Failed to parse booking datetime (date: {date_str}, time: {time_str}). Fallback to now. Error: {e}")
-            return datetime.utcnow()
+            return datetime.now(timezone.utc)
 
 
 def create_calendar_event(
@@ -50,7 +50,7 @@ def create_calendar_event(
         token_data = json.loads(calendar_token_json_str)
     except Exception as e:
         logger.error(f"Failed to parse calendar_token JSON: {e}")
-        return {"error": "Invalid calendar token format", "mock": True, "id": f"mock-err-{int(datetime.utcnow().timestamp())}"}
+        return {"error": "Invalid calendar token format", "mock": True, "id": f"mock-err-{int(datetime.now(timezone.utc).timestamp())}"}
 
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     is_mock = token_data.get("token") == "mock-access-token" or not client_id

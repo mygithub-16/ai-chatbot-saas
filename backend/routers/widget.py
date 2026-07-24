@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+from datetime import datetime, timezone
 import re
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from backend.db import get_db, SessionLocal
 from backend.models import Business, ConversationSession, Lead, Event
+from backend.calendar_service import create_calendar_event
+from backend.growth import score_lead
 from backend.ai import (
     classify_booking_message as ai_classify_booking_message,
     extract_booking_entities as ai_extract_booking_entities,
@@ -348,7 +349,7 @@ def get_widget_iframe_page(business_ref: str, db: Session = Depends(get_db)):
 def widget_chat(payload: WidgetChatPayload, db: Session = Depends(get_db)) -> Dict[str, Any]:
     session_id = payload.session_id or "widget-session"
     business = get_business_by_ref(db, payload.business_id, payload.business_name, payload.business_ref)
-    
+
     if not business:
         return {
             "ok": True,
@@ -373,32 +374,150 @@ def widget_chat(payload: WidgetChatPayload, db: Session = Depends(get_db)) -> Di
             business_id=business.id,
             intent=None,
             status="collecting",
-            workflow_state_json={},
+            workflow_state_json={"step": "collecting_name"},
             slots_json={},
-            missing_slots_json=[],
+            missing_slots_json=["name", "phone", "service", "date", "time"],
             history_json=[],
         )
         db.add(conversation_session)
         db.commit()
         db.refresh(conversation_session)
 
-    # Simplified response generation
-    response_text = ai_generate_response(
-        message=payload.message,
-        business_name=b_name,
-        business_personality_prompt=business.personality_prompt or "",
-        conversation_context=f"Business Description: {b_context['business_description']}\nServices: {b_context['services_products']}\nFAQs: {b_context['faqs']}",
+    current_slots: Dict[str, Any] = dict(conversation_session.slots_json or {})
+    current_history: list = list(conversation_session.history_json or [])
+    current_status = conversation_session.status or "collecting"
+
+    # Step 1. Classify intent & extract entities
+    classification = ai_classify_booking_message(
+        payload.message,
+        b_name,
         business_context=b_context,
-    ) or "Thank you for reaching out! How else can I assist you?"
+        booking_status=current_status,
+    )
+    extracted_entities = ai_extract_booking_entities(
+        payload.message,
+        b_name,
+        business_context=b_context,
+    )
+
+    # Heuristic fallbacks if LLM extraction returned empty/partial
+    if extracted_entities.get("name") and not current_slots.get("name"):
+        current_slots["name"] = extracted_entities["name"]
+    if extracted_entities.get("phone") and not current_slots.get("phone"):
+        current_slots["phone"] = extracted_entities["phone"]
+    if extracted_entities.get("service") and not current_slots.get("service"):
+        current_slots["service"] = extracted_entities["service"]
+    if extracted_entities.get("date") and not current_slots.get("date"):
+        current_slots["date"] = extracted_entities["date"]
+    if extracted_entities.get("time") and not current_slots.get("time"):
+        current_slots["time"] = extracted_entities["time"]
+
+    # Phone regex fallback
+    if not current_slots.get("phone"):
+        phone_match = re.search(r"\+?\d[\d\s().-]{7,}\d", payload.message)
+        if phone_match:
+            current_slots["phone"] = phone_match.group(0).strip()
+
+    # Step 2. Determine missing slots & booking intent
+    required_slots = ["name", "phone", "service", "date", "time"]
+    missing_slots = [slot for slot in required_slots if not current_slots.get(slot)]
+
+    intent = classification.get("intent", "other")
+    is_confirmation = classification.get("is_confirmation", False) or intent == "confirm_booking"
+    is_decline = classification.get("is_decline", False) or intent == "decline_booking"
+    is_booking_related = (
+        classification.get("is_booking_related", False)
+        or bool(len(missing_slots) < len(required_slots))
+        or any(kw in payload.message.lower() for kw in ["book", "appointment", "schedule", "reserve", "slot", "cost", "price", "service"])
+    )
+
+    step_name = "collecting"
+    response_text = ""
+
+    if not is_booking_related and len(missing_slots) == len(required_slots) and current_status == "collecting":
+        # General FAQ / business query response
+        response_text = ai_generate_response(
+            message=payload.message,
+            business_name=b_name,
+            business_personality_prompt=business.personality_prompt or "",
+            conversation_context=f"Business Description: {b_context['business_description']}\nServices: {b_context['services_products']}\nFAQs: {b_context['faqs']}",
+            business_context=b_context,
+        ) or "Thank you for reaching out! How else can I assist you?"
+        step_name = "general_faq"
+    else:
+        # State machine booking progression
+        if len(missing_slots) > 0:
+            next_missing = missing_slots[0]
+            step_name = f"collecting_{next_missing}"
+            conversation_session.status = "collecting"
+        else:
+            if is_confirmation or current_status in ["confirming", "READY_FOR_CONFIRMATION"]:
+                step_name = "confirmed"
+                conversation_session.status = "completed"
+            elif current_status == "completed":
+                step_name = "completed"
+            else:
+                step_name = "confirming"
+                conversation_session.status = "confirming"
+
+        response_text = ai_generate_booking_reply(
+            business_name=b_name,
+            business_personality_prompt=business.personality_prompt or "",
+            step_name=step_name,
+            slots=current_slots,
+            business_context=b_context,
+        ) or "Thank you! Your request has been recorded."
+
+        # If booking just reached confirmed status → Create Lead & Auto-sync Calendar Event
+        if step_name == "confirmed":
+            lead_data = score_lead(
+                message=f"Booking: {current_slots.get('service')} on {current_slots.get('date')} at {current_slots.get('time')}",
+                metadata=current_slots,
+            )
+            lead = Lead(
+                business_id=business.id,
+                name=str(current_slots.get("name", "Client")),
+                business_type=business.name or "service_business",
+                contact=str(current_slots.get("phone", "")),
+                email=str(current_slots.get("email", "")),
+                source="chat_widget",
+                session_id=session_id,
+                status=lead_data.get("status", "HOT"),
+                buying_probability=lead_data.get("buying_probability", 90),
+                urgency_score=lead_data.get("urgency_score", 5),
+                metadata_json=current_slots,
+            )
+            db.add(lead)
+
+            # Auto-sync to Google Calendar if owner has connected account or mock token
+            if business.owner and business.owner.calendar_token:
+                try:
+                    create_calendar_event(
+                        calendar_token_json_str=business.owner.calendar_token,
+                        calendar_id=business.owner.calendar_id,
+                        slots=current_slots,
+                        business_name=b_name,
+                    )
+                except Exception as exc:
+                    print(f"Calendar auto-sync error: {exc}")
+
+    # Update conversation session state
+    current_history.append({"user": payload.message, "assistant": response_text, "timestamp": datetime.now(timezone.utc).isoformat()})
+    conversation_session.intent = intent
+    conversation_session.slots_json = current_slots
+    conversation_session.missing_slots_json = missing_slots
+    conversation_session.workflow_state_json = {"step": step_name}
+    conversation_session.history_json = current_history
+    conversation_session.updated_at = datetime.now(timezone.utc)
 
     # Record event
     event = Event(
-        event_name="demo_completed",
-        timestamp=conversation_session.updated_at,
+        event_name="demo_completed" if step_name in ["confirmed", "completed"] else "chat_message",
+        timestamp=datetime.now(timezone.utc),
         session_id=session_id,
         business_id=business.id,
         user_id=payload.user_id,
-        metadata_json={"message_len": len(payload.message), "source": "widget_chat"},
+        metadata_json={"message_len": len(payload.message), "step": step_name, "source": "widget_chat"},
     )
     db.add(event)
     db.commit()
@@ -407,4 +526,9 @@ def widget_chat(payload: WidgetChatPayload, db: Session = Depends(get_db)) -> Di
         "ok": True,
         "response": response_text,
         "business": {"id": business.id, "name": b_name},
+        "slots": current_slots,
+        "missing_slots": missing_slots,
+        "step": step_name,
+        "status": conversation_session.status,
     }
+

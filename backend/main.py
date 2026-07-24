@@ -10,9 +10,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 try:
-    from slowapi import Limiter, _rate_limit_exceeded_handler
-    from slowapi.errors import RateLimitExceeded
-    from slowapi.util import get_remote_address
+    # Rate limiting via slowapi
+    from slowapi import Limiter, _rate_limit_exceeded_handler  # type: ignore # pyright: ignore[reportMissingImports]
+    from slowapi.errors import RateLimitExceeded  # type: ignore # pyright: ignore[reportMissingImports]
+    from slowapi.util import get_remote_address  # type: ignore # pyright: ignore[reportMissingImports]
     HAS_SLOWAPI = True
 except ImportError:
     HAS_SLOWAPI = False
