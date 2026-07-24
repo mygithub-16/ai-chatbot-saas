@@ -12,4 +12,5 @@ anthropic
 google-genai
 httpx
 slowapi
+psycopg2-binary
 
