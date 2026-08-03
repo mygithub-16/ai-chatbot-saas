@@ -51,7 +51,22 @@ def serialize_client_business(business: Business) -> Dict[str, Any]:
 def get_client_business(user: User = Depends(get_request_user), db: Session = Depends(get_db)) -> Dict[str, Any]:
     business = db.query(Business).filter(Business.owner_id == user.id).first()
     if not business:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business profile not found")
+        business = Business(
+            owner_id=user.id,
+            name=user.business_name or "My Business Chatbot",
+            business_name=user.business_name or "My Business Chatbot",
+            business_description="A helpful business virtual receptionist.",
+            services_products="General inquiries, appointment scheduling, customer support.",
+            faqs="What hours are you open? We are available online 24/7.",
+            policies="Please cancel at least 24 hours in advance.",
+            tone_style="friendly and professional",
+            personality_prompt="You are a warm, helpful receptionist.",
+            plan="starter",
+            subscription_status="trial",
+        )
+        db.add(business)
+        db.commit()
+        db.refresh(business)
     return {"ok": True, "business": serialize_client_business(business)}
 
 

@@ -29,11 +29,32 @@ def seed_admin() -> None:
                 is_admin=True,
             )
             db.add(user)
+            db.commit()
+            db.refresh(user)
         else:
             user.is_admin = True
             if not user.password_hash:
                 user.password_hash = hash_password(password)
-        db.commit()
+            db.commit()
+
+        # Ensure admin user has an associated Business profile
+        business = db.query(Business).filter(Business.owner_id == user.id).first()
+        if not business:
+            business = Business(
+                owner_id=user.id,
+                name="ECHURA Admin Business",
+                business_name="ECHURA Admin",
+                business_description="System operator and master dashboard administrator.",
+                services_products="AI chatbot SaaS platform administration.",
+                faqs="How to manage client bots? Use operator dashboard.",
+                policies="Master admin access.",
+                tone_style="professional",
+                personality_prompt="Master system administrator assistant.",
+                plan="scale",
+                subscription_status="active",
+            )
+            db.add(business)
+            db.commit()
     finally:
         db.close()
 
