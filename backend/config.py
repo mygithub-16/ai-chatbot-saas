@@ -30,7 +30,7 @@ class Settings:
     allowed_origins: List[str] = field(
         default_factory=lambda: [
             origin.strip().rstrip("/")
-            for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173").split(",")
+            for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,https://echura.app,https://www.echura.app").split(",")
             if origin.strip()
         ]
     )
