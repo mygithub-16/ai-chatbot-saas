@@ -1,20 +1,17 @@
-# deps-updated: 2026-08-03
+# deps-updated: 2026-08-03b
 fastapi
 uvicorn[standard]
 sqlalchemy
 pydantic
 python-multipart
 python-dotenv
-passlib[bcrypt]
-bcrypt
 python-jose[cryptography]
-PyJWT
 openai
 anthropic
-google-genai
 google-auth
 google-auth-oauthlib
 google-api-python-client
+python-dateutil
 httpx
 slowapi
 psycopg2-binary
