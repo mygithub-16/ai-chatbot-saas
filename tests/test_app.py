@@ -148,6 +148,16 @@ def test_paystack_billing_mock():
     assert init_res.json()["ok"] is True
     assert "authorization_url" in init_res.json()
 
+    # Test initialize_paystack_transaction direct helper with amount_kobo
+    res_direct = initialize_paystack_transaction(
+        email="testadmin@example.com",
+        amount_ngn=120000,
+        callback_url="http://localhost:5173/#client-dashboard",
+        metadata={"plan": "growth"}
+    )
+    assert res_direct["status"] is True
+    assert "authorization_url" in res_direct["data"]
+
 
 def test_prompt_architect():
     result = architect.build_default("barber", "KC Cuts")

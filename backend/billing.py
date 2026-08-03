@@ -72,6 +72,9 @@ def initialize_paystack_transaction(
             }
         }
 
+    # Paystack amount is in kobo (NGN cents)
+    amount_kobo = amount_ngn * 100
+
     headers = {
         "Authorization": f"Bearer {paystack_secret}",
         "Content-Type": "application/json"
