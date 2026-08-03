@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict
 
@@ -31,10 +32,22 @@ from backend.routers.prompt import router as prompt_router
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    try:
+        seed_admin()
+    except Exception as exc:
+        print(f"Startup admin check: {exc}")
+    yield
+
+
 app = FastAPI(
     title="ECHURA AI Chatbot SaaS",
     description="Production-grade AI Chatbot SaaS Platform",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 if HAS_SLOWAPI:
@@ -65,15 +78,6 @@ FRONTEND_DIST = FRONTEND_ROOT / "dist"
 
 if (FRONTEND_DIST / "assets").exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    init_db()
-    try:
-        seed_admin()
-    except Exception as exc:
-        print(f"Startup admin check: {exc}")
 
 
 @app.get("/health")
