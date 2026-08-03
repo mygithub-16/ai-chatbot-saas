@@ -214,14 +214,14 @@ a:hover {
   overflow: hidden;
   isolation: isolate;
   
-  /* Stronger frosted header: visibly blurry and premium */
-  background-color: rgba(255, 255, 255, 0.65);
-  -webkit-backdrop-filter: blur(26px) saturate(190%);
-  backdrop-filter: blur(26px) saturate(190%);
+  /* Ultra-frosted header: high blur, lower background opacity */
+  background-color: rgba(255, 255, 255, 0.45);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  backdrop-filter: blur(36px) saturate(200%);
   
-  /* Subtle light-mode edge reflection & soft viewport shadow */
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1), inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+  /* Glass border refraction & soft viewport depth shadow */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 36px rgba(79, 70, 229, 0.12), inset 0 -1px 0 rgba(255, 255, 255, 0.8);
   
   transform: translate3d(0, 0, 0);
   will-change: transform, backdrop-filter;
@@ -229,8 +229,8 @@ a:hover {
 }
 
 .topbar--scrolled {
-  border-bottom-color: rgba(79, 70, 229, 0.18);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14), inset 0 -1px 0 rgba(255, 255, 255, 0.56);
+  border-bottom-color: rgba(79, 70, 229, 0.25);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16), inset 0 -1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .topbar::before {
@@ -239,7 +239,7 @@ a:hover {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05));
 }
 
 .topbar > * {
@@ -248,12 +248,12 @@ a:hover {
 }
 
 body.dark-theme .topbar {
-  /* Dark version: still refined, but visibly blurred */
-  background-color: rgba(12, 16, 28, 0.75);
-  -webkit-backdrop-filter: blur(26px) saturate(190%);
-  backdrop-filter: blur(26px) saturate(190%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 12px 30px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  /* Dark version: ultra-frosted glass blur */
+  background-color: rgba(6, 9, 24, 0.55);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  backdrop-filter: blur(36px) saturate(200%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 body.dark-theme .topbar--scrolled {

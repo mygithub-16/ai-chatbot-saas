@@ -143,9 +143,11 @@ export default function App() {
           left: 0,
           right: 0,
           width: '100%',
-          backdropFilter: 'blur(26px) saturate(190%)',
-          WebkitBackdropFilter: 'blur(26px) saturate(190%)',
-          backgroundColor: theme === 'dark' ? 'rgba(12, 16, 28, 0.75)' : 'rgba(255, 255, 255, 0.65)',
+          backdropFilter: 'blur(36px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(36px) saturate(200%)',
+          backgroundColor: theme === 'dark' ? 'rgba(6, 9, 24, 0.55)' : 'rgba(255, 255, 255, 0.45)',
+          borderBottom: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.6)',
+          boxShadow: theme === 'dark' ? '0 12px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)' : '0 12px 36px rgba(79, 70, 229, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
           zIndex: 1000,
         }}
       >
