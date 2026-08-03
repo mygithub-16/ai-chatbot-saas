@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { readJsonResponse } from '../utils/http'
+import { apiUrl, readJsonResponse } from '../utils/http'
 import { emitToast } from '../utils/toast'
 
 const emptyBusinessForm = {
@@ -69,12 +69,12 @@ export default function AnalyticsDashboard({ authToken, onLogout }) {
 
     try {
       const [overviewResponse, funnelResponse, leadsResponse, activityResponse, businessesResponse, adminBusinessesResponse] = await Promise.all([
-        fetch('/analytics/overview', { headers: authHeaders }),
-        fetch('/analytics/funnel', { headers: authHeaders }),
-        fetch('/analytics/leads', { headers: authHeaders }),
-        fetch('/analytics/activity', { headers: authHeaders }),
-        fetch('/analytics/businesses', { headers: authHeaders }),
-        fetch('/admin/businesses', { headers: authHeaders }),
+        fetch(apiUrl('/analytics/overview'), { headers: authHeaders }),
+        fetch(apiUrl('/analytics/funnel'), { headers: authHeaders }),
+        fetch(apiUrl('/analytics/leads'), { headers: authHeaders }),
+        fetch(apiUrl('/analytics/activity'), { headers: authHeaders }),
+        fetch(apiUrl('/analytics/businesses'), { headers: authHeaders }),
+        fetch(apiUrl('/admin/businesses'), { headers: authHeaders }),
       ])
 
       if ([overviewResponse, funnelResponse, leadsResponse, activityResponse, businessesResponse, adminBusinessesResponse].some((response) => response.status === 401)) {
@@ -155,7 +155,7 @@ export default function AnalyticsDashboard({ authToken, onLogout }) {
       const endpoint = businessForm.id ? `/admin/businesses/${businessForm.id}` : '/admin/businesses'
       const method = businessForm.id ? 'PATCH' : 'POST'
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(apiUrl(endpoint), {
         method,
         headers: authHeaders,
         body: JSON.stringify({

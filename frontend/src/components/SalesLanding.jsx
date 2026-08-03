@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { readJsonResponse } from '../utils/http'
+import { apiUrl, readJsonResponse } from '../utils/http'
 import { emitToast } from '../utils/toast'
 
 const starters = [
@@ -23,7 +23,7 @@ export default function SalesLanding() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch('/businesses')
+    fetch(apiUrl('/businesses'))
       .then(readJsonResponse)
       .then((payload) => {
         const options = Array.isArray(payload.businesses) ? payload.businesses : []
@@ -50,7 +50,7 @@ export default function SalesLanding() {
     setError('')
     setChatLog((current) => [...current, { role: 'user', content: cleanMessage }])
     try {
-      const response = await fetch('/api/widget/chat', {
+      const response = await fetch(apiUrl('/api/widget/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

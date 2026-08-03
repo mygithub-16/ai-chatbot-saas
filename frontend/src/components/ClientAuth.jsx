@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { readJsonResponse } from '../utils/http'
+import { apiUrl, readJsonResponse } from '../utils/http'
 import { emitToast } from '../utils/toast'
 
 export default function ClientAuth({ onSuccess, onBack }) {
@@ -17,7 +17,7 @@ export default function ClientAuth({ onSuccess, onBack }) {
     const endpoint = isRegister ? '/auth/register' : '/auth/login'
     
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(apiUrl(endpoint), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

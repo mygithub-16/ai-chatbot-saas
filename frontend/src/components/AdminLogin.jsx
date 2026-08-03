@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { readJsonResponse } from '../utils/http'
+import { apiUrl, readJsonResponse } from '../utils/http'
 import { emitToast } from '../utils/toast'
 
 export default function AdminLogin({ onSuccess }) {
@@ -13,7 +13,7 @@ export default function AdminLogin({ onSuccess }) {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/admin/auth/login', {
+      const response = await fetch(apiUrl('/admin/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

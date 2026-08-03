@@ -75,9 +75,9 @@ export default function ClientDashboard({ authToken, onLogout }) {
     setError('')
     try {
       const [businessRes, leadsRes, analyticsRes] = await Promise.all([
-        fetch('/api/client/business', { headers: authHeaders }),
-        fetch('/api/client/leads', { headers: authHeaders }),
-        fetch('/api/client/analytics', { headers: authHeaders }),
+        fetch(apiUrl('/api/client/business'), { headers: authHeaders }),
+        fetch(apiUrl('/api/client/leads'), { headers: authHeaders }),
+        fetch(apiUrl('/api/client/analytics'), { headers: authHeaders }),
       ])
 
       if (businessRes.status === 401 || leadsRes.status === 401) {
@@ -151,7 +151,7 @@ export default function ClientDashboard({ authToken, onLogout }) {
     setError('')
     setSuccessMessage('')
     try {
-      const response = await fetch('/api/client/business', {
+      const response = await fetch(apiUrl('/api/client/business'), {
         method: 'PATCH',
         headers: authHeaders,
         body: JSON.stringify(businessForm),
@@ -194,7 +194,7 @@ export default function ClientDashboard({ authToken, onLogout }) {
     setSandboxLoading(true)
 
     try {
-      const response = await fetch('/api/widget/chat', {
+      const response = await fetch(apiUrl('/api/widget/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -237,7 +237,7 @@ export default function ClientDashboard({ authToken, onLogout }) {
       // Callback URL should point to this client-dashboard, including activeTab=billing so it re-opens the billing page
       const callbackUrl = `${window.location.origin}${window.location.pathname}?plan=${planName}#client-dashboard`
       
-      const response = await fetch('/api/client/billing/initialize-paystack', {
+      const response = await fetch(apiUrl('/api/client/billing/initialize-paystack'), {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({
@@ -274,7 +274,7 @@ export default function ClientDashboard({ authToken, onLogout }) {
     setError('')
     setSuccessMessage('')
     try {
-      const response = await fetch('/auth/google-calendar/authorize', {
+      const response = await fetch(apiUrl('/auth/google-calendar/authorize'), {
         headers: authHeaders
       })
       const data = await readJsonResponse(response)
@@ -300,7 +300,7 @@ export default function ClientDashboard({ authToken, onLogout }) {
     setError('')
     setSuccessMessage('')
     try {
-      const response = await fetch('/api/client/calendar/disconnect', {
+      const response = await fetch(apiUrl('/api/client/calendar/disconnect'), {
         method: 'POST',
         headers: authHeaders
       })
