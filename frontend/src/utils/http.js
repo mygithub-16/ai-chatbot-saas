@@ -1,4 +1,7 @@
-const VITE_API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const VITE_API_URL = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://api.echura.app' : '')
+).replace(/\/$/, '')
 
 export function apiUrl(path) {
   if (!path) return ''
