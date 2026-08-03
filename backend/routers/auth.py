@@ -273,7 +273,8 @@ def google_calendar_callback(
         user.calendar_token = mock_token
         user.calendar_id = "primary"
         db.commit()
-        return RedirectResponse(url="/#client-dashboard?calendar_connected=true")
+        frontend_url = os.getenv("FRONTEND_URL", "https://echura.app")
+        return RedirectResponse(url=f"{frontend_url}/#client-dashboard?calendar_connected=true")
 
     try:
         import httpx
@@ -301,7 +302,8 @@ def google_calendar_callback(
             user.calendar_token = stored_token
             user.calendar_id = "primary"
             db.commit()
-            return RedirectResponse(url="/#client-dashboard?calendar_connected=true")
+            frontend_url = os.getenv("FRONTEND_URL", "https://echura.app")
+            return RedirectResponse(url=f"{frontend_url}/#client-dashboard?calendar_connected=true")
         else:
             raise ValueError(token_data.get("error_description", "Token exchange failed"))
     except Exception as exc:
