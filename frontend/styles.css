@@ -215,9 +215,9 @@ a:hover {
   isolation: isolate;
   
   /* Stronger frosted header: visibly blurry and premium */
-  background-color: rgba(255, 255, 255, 0.58);
-  backdrop-filter: blur(26px) saturate(190%);
+  background-color: rgba(255, 255, 255, 0.65);
   -webkit-backdrop-filter: blur(26px) saturate(190%);
+  backdrop-filter: blur(26px) saturate(190%);
   
   /* Subtle light-mode edge reflection & soft viewport shadow */
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -249,9 +249,9 @@ a:hover {
 
 body.dark-theme .topbar {
   /* Dark version: still refined, but visibly blurred */
-  background-color: rgba(12, 16, 28, 0.7);
-  backdrop-filter: blur(26px) saturate(190%);
+  background-color: rgba(12, 16, 28, 0.75);
   -webkit-backdrop-filter: blur(26px) saturate(190%);
+  backdrop-filter: blur(26px) saturate(190%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 12px 30px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }

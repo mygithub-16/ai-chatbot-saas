@@ -137,7 +137,17 @@ export default function App() {
       <div className="bg-gradient-overlay" aria-hidden="true" />
       <header
         className={`topbar glass-surface ${scrolled ? 'topbar--scrolled' : ''}`}
-        style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%' }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          backdropFilter: 'blur(26px) saturate(190%)',
+          WebkitBackdropFilter: 'blur(26px) saturate(190%)',
+          backgroundColor: theme === 'dark' ? 'rgba(12, 16, 28, 0.75)' : 'rgba(255, 255, 255, 0.65)',
+          zIndex: 1000,
+        }}
       >
         <button className="brand" onClick={goHome} type="button">
           <span>ECHURA</span>
