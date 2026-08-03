@@ -56,46 +56,24 @@
 
 ---
 
-## 2. Database Decision — SQLite vs PostgreSQL
+## 2. Database Setup — PostgreSQL (Default for Production)
 
-### ✅ Start with SQLite (Default — No Setup Required)
-
-The app ships configured for SQLite out of the box.
-
-```env
-DATABASE_URL=sqlite:///./chatbot_saas.db
-```
-
-**Use SQLite when:**
-- You are deploying to a **single container / single server** instance
-- You are in early stage (< 50 active tenants)
-- Your hosting provider offers **persistent disk storage** (Render, Fly.io, DigitalOcean Droplet, VPS)
-
-> **Critical**: If you deploy to Render's free tier or any **ephemeral filesystem** host, the SQLite file will be **wiped on every redeploy**. You must either attach a **persistent disk** (Render) or migrate to PostgreSQL.
-
----
-
-### 🚀 Upgrade to PostgreSQL (Recommended for Scale)
-
-Switch by updating one environment variable — no code changes needed:
+The platform is configured for **PostgreSQL** in production with zero persistent disk dependencies.
 
 ```env
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
 ```
 
-**Use PostgreSQL when:**
-- You expect more than ~50 active paying tenants
-- You plan to run multiple server instances (horizontal scaling)
-- You are deploying to Render (free tier / any serverless host)
-- You want better concurrent write performance and connection pooling
+> **Automated Connection URL Normalization**: If your cloud provider (Render, Supabase, Heroku, Railway) supplies a `postgres://` connection string, the backend automatically normalizes it to `postgresql://` at runtime.
 
-**Recommended providers:**
+### Recommended Managed PostgreSQL Providers
+
 | Provider | Free Tier | Notes |
 | :--- | :--- | :--- |
-| [Supabase](https://supabase.com) | ✅ Yes | PostgreSQL · generous free quota |
-| [Neon](https://neon.tech) | ✅ Yes | Serverless PostgreSQL · great for Render |
-| Render Postgres | Partial | Paid plan, native Render integration |
-| Railway | ✅ Yes | Easy setup with Railway deployments |
+| **Render Postgres** | ✅ Yes | Automatic Blueprint setup via `render.yaml` |
+| **Supabase** | ✅ Yes | Managed PostgreSQL with connection pooling |
+| **Neon** | ✅ Yes | Serverless PostgreSQL with instant branching |
+| **Railway** | ✅ Yes | One-click database provision |
 
 **Required extra package (already in requirements.txt once you switch):**
 ```

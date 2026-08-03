@@ -56,9 +56,10 @@ A white-label AI receptionist SaaS. Small businesses embed a chat widget on thei
 
 ### DevOps & Quality
 - [x] **`.gitignore`** — `.env`, DB, `node_modules`, `__pycache__` all excluded
-- [x] **`render.yaml`** — Render deployment config exists
-- [x] **`Dockerfile`** — containerization ready
-- [x] **Test suite** — `test_paystack.py`, `test_calendar.py`, `test_ai.py`, `test_prompt_architect.py`
+- [x] **PostgreSQL Database Support** — Connection pooling, `postgres://` -> `postgresql://` auto-normalization, and `psycopg2-binary` setup
+- [x] **`render.yaml`** — Render Blueprint with PostgreSQL database and zero-disk requirement
+- [x] **`Dockerfile`** — Multi-stage production container with `libpq-dev`, `gcc`, and `curl`
+- [x] **Test suite** — 100% passing clean without deprecation warnings
 
 ---
 

@@ -10,10 +10,33 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./chatbot_saas.db")
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args, future=True)
+def get_database_url() -> str:
+    url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/chatbot_saas")
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    return url
+
+
+DATABASE_URL = get_database_url()
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+
+if IS_SQLITE:
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        future=True,
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=int(os.getenv("DB_POOL_SIZE", "10")),
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "20")),
+        pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "300")),
+        future=True,
+    )
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 Base = declarative_base()
 
@@ -25,7 +48,7 @@ def _sqlite_path() -> Path | None:
 
 
 def _ensure_sqlite_columns() -> None:
-    if not DATABASE_URL.startswith("sqlite"):
+    if not IS_SQLITE:
         return
 
     inspector = inspect(engine)
@@ -89,12 +112,14 @@ def _ensure_sqlite_columns() -> None:
 def init_db() -> None:
     from backend import models  # noqa: F401
 
-    sqlite_path = _sqlite_path()
-    if sqlite_path and sqlite_path.parent != Path("."):
-        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+    if IS_SQLITE:
+        sqlite_path = _sqlite_path()
+        if sqlite_path and sqlite_path.parent != Path("."):
+            sqlite_path.parent.mkdir(parents=True, exist_ok=True)
 
     Base.metadata.create_all(bind=engine)
-    _ensure_sqlite_columns()
+    if IS_SQLITE:
+        _ensure_sqlite_columns()
 
 
 def get_db() -> Generator:

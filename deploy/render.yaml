@@ -2,14 +2,33 @@ services:
   - type: web
     name: ai-chatbot-saas
     env: docker
-    plan: starter
+    plan: free
     autoDeploy: true
     healthCheckPath: /health
-    disk:
-      name: sqlite-data
-      mountPath: /app/data
-      sizeGB: 1
     envVars:
+      - key: ENVIRONMENT
+        value: production
       - key: DATABASE_URL
-        value: sqlite:////app/data/chatbot_saas.db
+        fromDatabase:
+          name: ai-chatbot-saas-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_TOKEN_SECRET
+        generateValue: true
+      - key: ADMIN_DASHBOARD_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+databases:
+  - name: ai-chatbot-saas-db
+    plan: free
+    databaseName: ai_chatbot_saas
+    user: ai_chatbot_user
+
 
