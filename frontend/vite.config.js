@@ -1,3 +1,4 @@
+// build: 2026-08-03
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
